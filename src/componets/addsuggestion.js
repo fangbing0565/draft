@@ -4,14 +4,14 @@ const addSuggestion = ({editorState, start, end, trigger, text}) => {
   const entityKey = Entity.create('MENTION', 'IMMUTABLE', "http://vk.com");
   const currentSelectionState = editorState.getSelection();
   const mentionTextSelection = currentSelectionState.merge({
-    anchorOffset: start,
+    anchorOffset: end,
     focusOffset: end
   });
 
   let insertingContent = Modifier.replaceText(
     editorState.getCurrentContent(),
     mentionTextSelection,
-    text, ['link', 'BOLD'],
+    text, ['link', ''],
     entityKey
   );
 

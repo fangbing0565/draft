@@ -9,7 +9,7 @@ const styles = {
   },
   editor: {
     borderRadius: 4,
-    minHeight: 30,
+    minHeight: 600,
     padding: 10,
     background: '#2b303b',
     color: '#85939f'

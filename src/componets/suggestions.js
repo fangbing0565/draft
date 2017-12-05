@@ -25,9 +25,7 @@ class SuggestionList extends React.Component {
     const normalizedIndex = normalizeIndex(
       selectedIndex, array.length
     );
-    return ( < ul style = {
-      style
-    } > {
+    return ( < ul style = {style}> {
       array.map((person, index) => {
         const {
           suggestionsState

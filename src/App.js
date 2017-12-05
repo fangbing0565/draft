@@ -11,9 +11,11 @@ import addSuggestion from './componets/addsuggestion';
 import 'whatwg-fetch'
 import { getPrompt } from './actions'
 
-var filteredArrayTemp;
+let filteredArrayTemp;
 const {Entity, Modifier, Editor, EditorState, convertToRaw} = Draft;
 
+let currentIndex = -1;
+let requestStr = '';
 
 class AutocompleteInput extends React.Component {
 
@@ -27,46 +29,29 @@ class AutocompleteInput extends React.Component {
             currentType: '',
             content: {},
             selection: {},
-            requestStr: '',
+            prompt: []
         };
-        this.mark = ['。', '!', '！', '?', '？', '.', ',', '，', ';']
-    }
-
-    Ajax = (type, url, data) => {
-        fetch(url, {
-            method: type.toUpperCase(),
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        }).then(
-            (res) => {
-                console.log(res)
-            }
-        ).then(
-            (res) => {
-                console.log(res)
-            }
-        )
+        this.mark = ['。', '!', '！', '?', '？', '.', ',', '，', ';'];
     }
 
     onChange = (editorState) => {
-        this.setState({editorState});
-        const content = this.state.editorState.getCurrentContent();
-        const selection = this.state.editorState.getSelection();
-        this.setState(
-            {
-                content: convertToRaw(content),
-                selection: selection,
-            },
-            () => {
-                const content = this.state.editorState.getCurrentContent()
-                const selection = this.state.editorState.getSelection()
-                console.log(selection, selection.getEndKey(), selection.getEndOffset(), convertToRaw(content))
-                this.cursorToMark(convertToRaw(content), selection)
-            }
-        )
+        if(this.state.editorState) {
+            this.setState({editorState});
+            const content = this.state.editorState.getCurrentContent();
+            const selection = this.state.editorState.getSelection();
+            this.setState(
+                {
+                    content: convertToRaw(content),
+                    selection: selection,
+                },
+                () => {
+                    const content = this.state.editorState.getCurrentContent()
+                    const selection = this.state.editorState.getSelection()
+                    console.log(selection, selection.getEndKey(), selection.getEndOffset(), convertToRaw(content))
+                    this.cursorToMark(convertToRaw(content), selection)
+                }
+            )
+        }
     }
 
     cursorToMark = (data, selection) => {
@@ -76,11 +61,14 @@ class AutocompleteInput extends React.Component {
         }
         for (let i = 0; i < data.blocks.length; i++) {
             if (data.blocks[i].key === cursor.key && data.blocks[i].text.slice(cursor.offset - 1, cursor.offset) !== '' && this.mark.indexOf(data.blocks[i].text.slice(cursor.offset - 1, cursor.offset)) >= 0) {
-                this.requestStr = this.getRequestStr(data, i, cursor.offset)
+                requestStr = this.getRequestStr(i, cursor.offset)
                 // todo  弹出提示选择自动填充下一句
                 // this.insertResponse()
-                let data = {'context': this.requestStr}
-                this.props.getPrompt(data)
+                let data = {'context': requestStr}
+                if(requestStr && requestStr.length >= 60) {
+                    currentIndex =  this.mark.indexOf(this.getRequestStr(i, cursor.offset).slice(this.getRequestStr(i, cursor.offset).length - 1, this.getRequestStr(i, cursor.offset).length))
+                    this.props.getPrompt(data)
+                }
             }
         }
     }
@@ -113,7 +101,6 @@ class AutocompleteInput extends React.Component {
                 editorState: nextEditorState
             }
         )
-
     }
 
     onAutocompleteChange = (autocompleteState) => {
@@ -126,10 +113,16 @@ class AutocompleteInput extends React.Component {
     onInsert = (insertState) => {
         if (!filteredArrayTemp) {
             return null;
+        }else {
+            const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
+            requestStr && requestStr.length >= 60 ?
+            insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
+                :
+                insertState.text = ''
+            ;
+            // insertState.trigger =  requestStr.slice(requestStr.length,1)
+            return  addSuggestion(insertState);
         }
-        const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
-        insertState.text = insertState.trigger + filteredArrayTemp[index];
-        return addSuggestion(insertState);
     };
 
     getRequestStart(text) {
@@ -146,47 +139,45 @@ class AutocompleteInput extends React.Component {
         }
         else {
             return -1
-
         }
     }
 
-    getRequestStr = (data, index, end) => {
+    getRequestStr = (index, end) => {
+        const content = this.state.editorState.getCurrentContent();
+        let data = convertToRaw(content)
         let currentText = data.blocks[index].text.slice(0, end)
         let tag = false
         let start = null
         let strRepo = ''
 
-        if (this.getRequestStart(currentText.slice(0, end - 1)) >= 0) {
-            start = this.getRequestStart(currentText.slice(0, end - 1)) + 1
+        if ((currentText.slice(0, end - 1)).length >= 60) {
+            start = end - 60
             tag = true
         }
         if (tag) {
-            return currentText.slice(start, end)
+            return  currentText.slice(start, end)
         } else {
             if (index === 0) {
-                return data.blocks[index].text.slice(0, end) + strRepo
+                return  data.blocks[index].text.slice(0, end) + strRepo
             }
             for (let i = index; i >= 0; i--) {
-                if (i === index && this.getRequestStart(data.blocks[i].text.slice(0, data.blocks[i].text.length - 1)) >= 0) {
-                    return data.blocks[i].text.slice(this.getRequestStart(data.blocks[i].text), end)
+                if (i === index && (data.blocks[i].text.slice(0, data.blocks[i].text.length - 1)).length >= 60) {
+                    return  data.blocks[i].text.slice(end - 60, end)
                 }
-                else if (i !== index && this.getRequestStart(data.blocks[i].text.slice(0, data.blocks[i].text.length)) >= 0) {
-                    return data.blocks[i].text.slice(this.getRequestStart(data.blocks[i].text) + 1, data.blocks[i].text.length) + strRepo
-
+                else if (i !== index && (data.blocks[i].text.slice(0, data.blocks[i].text.length)).length + strRepo.length >= 60) {
+                    return  data.blocks[i].text.slice(0, data.blocks[i].text.length) + strRepo
                 }
                 else {
                     strRepo = data.blocks[i].text + strRepo
                 }
             }
         }
-
-
     }
 
     handleKeyCommand = (command, editorState) => {
-        console.log(this.requestStr)
+        // console.log(requestStr)
         // Enter 键  发送数据
-        this.insertResponse()
+        // this.insertResponse()
         // const newState = RichUtils.handleKeyCommand(editorState, command);
         // const newState = RichUtils.handleKeyCommand(editorState, command);
         // if (newState) {
@@ -214,11 +205,30 @@ class AutocompleteInput extends React.Component {
     };
 
     getFilteredArray(type) {
-        const dataArray = type == triggers.PERSON ? data.persons : data.tags;
+        // todo 更新数据部分
+        let dataArray = []
+        if(currentIndex === -1){
+            return []
+        }
+        if(this.state.prompt.length === 0 ){
+            dataArray = type === triggers.PERSON ? data.persons : data.tags;
+        }
+        else{
+            dataArray = this.state.prompt
+        }
         // const filteredArray = filterArray(dataArray, text.replace(triggers.regExByType(type, text), ''));
         // console.log(filteredArray)
 
         return dataArray;
+    }
+    componentDidUpdate() {
+        if (this.props.prompt && this.props.prompt.entities) {
+            this.setState(
+                {
+                    prompt: this.props.prompt.entities
+                }
+            )
+        }
     }
 
     render() {
