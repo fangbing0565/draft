@@ -120,7 +120,34 @@ async function ajaxJson(url, payload, method) {
     }
 }
 
+function filterPromptData  (data, filterType){
+    data = data.result
+    let str = []
+    for(let i =0; i < data.length; i++){
+        str[i] = ''
+        for(let j=0; j<data[i].length; j++){
+            const end = data[i][j].length
+            let temp = ''
+            if(data[i][j].indexOf('product_name') >= 0  && filterType.name){
+                const start = data[i][j].indexOf('product_name') - 12
+                temp = data[i][j].slice(0,start) + filterType.name + data[i][j].slice(12,end)
+            }
+            if(data[i][j].indexOf('category') >= 0  && filterType.category){
+                const start = data[i][j].indexOf('product_name') -8
+                temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(8,end)
+            }
+            if(data[i][j].indexOf('expense') >= 0  && filterType.expense){
+                const start = data[i][j].indexOf('product_name') -7
+                temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(7,end)
+            }
+            str[i] += temp ? temp : data[i][j]
+        }
+    }
+    return str
+}
+
 export {
     ajax,
-    ajaxJson
+    ajaxJson,
+    filterPromptData
 }

@@ -104,10 +104,11 @@ export class AutocompleteEditor extends Editor {
         }
         e.preventDefault();
         this.onMentionSelect();
-        this.autocompleteState = null;
+        // this.autocompleteState = null;
 
         if (onAutocompleteChange) {
-            onAutocompleteChange(null);
+            onAutocompleteChange(this.getAutocompleteState());
+            // onAutocompleteChange(null);   //todo  控制是否显示suggest
         }
         return true;
     };

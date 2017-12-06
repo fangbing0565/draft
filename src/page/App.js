@@ -4,6 +4,7 @@ import {AutocompleteEditor} from '../componets/autocomplete';
 import SuggestionList from '../componets/suggestions';
 import styles from '../styles/styles'
 import {normalizeIndex, filterArray} from '../util/utils';
+import {filterPromptData} from '../util';
 import { connect } from 'react-redux'
 import * as triggers from '../util/triggers';
 import * as data from '../data/data';
@@ -23,7 +24,6 @@ let filterType ={
     category: '',
     expense: ''
 }
-// let lastPostStr = '';
 const tools = [
     {id: 1, url:'./img/bold.svg'}, {id: 2, url:'./img/italic.svg'}, {id: 3, url:'./img/title.svg'},
     {id: 4, url:'./img/cite.svg'}, {id: 5, url:'./img/code.svg'}, {id: 6, url:'./img/unorderedlist.svg'},
@@ -49,7 +49,6 @@ class AutocompleteInput extends React.Component {
     }
 
     onChange = (editorState, state) => {
-        hasDot = false
         if(this.state.editorState) {
             editorState = editorState ? editorState : updateEditorState
             this.setState({editorState});
@@ -77,6 +76,7 @@ class AutocompleteInput extends React.Component {
     }
 
     cursorToMark = (data, selection) => {
+        hasDot = false
         let cursor = {
             key: selection.getEndKey(),
             offset: selection.getEndOffset(),
@@ -86,13 +86,11 @@ class AutocompleteInput extends React.Component {
             if (cursor.hasFocus && data.blocks[i].key === cursor.key && data.blocks[i].text.slice(cursor.offset - 1, cursor.offset) !== '' && this.mark.indexOf(data.blocks[i].text.slice(cursor.offset - 1, cursor.offset)) >= 0) {
                 requestStr = this.getRequestStr(i, cursor.offset)
                 // todo  弹出提示选择自动填充下一句
-                // this.insertResponse()
                 let data = {'context': requestStr}
                 if(requestStr && requestStr.length >= 60 ) {
                     hasDot = true
-                    // lastPostStr = requestStr
                     currentIndex =  this.mark.indexOf(this.getRequestStr(i, cursor.offset).slice(this.getRequestStr(i, cursor.offset).length - 1, this.getRequestStr(i, cursor.offset).length))
-                    this.props.getPrompt(data)
+                     this.props.getPrompt(data)
                 }
             }
         }
@@ -101,56 +99,6 @@ class AutocompleteInput extends React.Component {
             this.props.fetchPrompt(data)
         }
     }
-
-    addSuggestion = (data) => {
-        //    todo  取回数据 更新进对应位置
-        const text = ''
-        const {editorState} = this.state;
-        const selection = editorState.getSelection();
-        const contentState = editorState.getCurrentContent();
-        let txt = data.text + text;
-        let nextEditorState = EditorState.createEmpty();
-        if (selection.isCollapsed()) {
-            const nextContentState = Modifier.insertText(contentState, selection, txt);
-            nextEditorState = EditorState.push(
-                editorState,
-                nextContentState,
-                'insert-characters'
-            );
-        } else {
-            const nextContentState = Modifier.replaceText(contentState, selection, text);
-            nextEditorState = EditorState.push(
-                editorState,
-                nextContentState,
-                'insert-characters'
-            );
-        }
-        updateEditorState =  nextEditorState
-        this.onChange(updateEditorState)
-    }
-
-    onAutocompleteChange = (autocompleteState) => {
-        console.log(autocompleteState)
-        this.setState({
-            autocompleteState
-        })
-    };
-
-    onInsert = (insertState) => {
-        if (!filteredArrayTemp) {
-            return null;
-        }else {
-            const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
-            requestStr && requestStr.length >= 60 && index ?
-            // insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
-            insertState.text =  filteredArrayTemp[index]
-                :
-                insertState.text = ''
-            ;
-            // insertState.trigger =  requestStr.slice(requestStr.length,1)
-            return  this.addSuggestion(insertState);
-        }
-    };
 
     getRequestStart(text) {
         let tag = false
@@ -200,7 +148,60 @@ class AutocompleteInput extends React.Component {
             }
         }
     }
+/* todo   ---------------发送前准备结束-----------------------  */
 
+
+/* todo   ---------------返回数据处理插入开始-----------------------  */
+    addSuggestion = (data) => {
+        //    todo  取回数据 更新进对应位置
+        const text = ''
+        const {editorState} = this.state;
+        const selection = editorState.getSelection();
+        const contentState = editorState.getCurrentContent();
+        let txt = data.text + text;
+        let nextEditorState = EditorState.createEmpty();
+        if (selection.isCollapsed()) {
+            const nextContentState = Modifier.insertText(contentState, selection, txt);
+            nextEditorState = EditorState.push(
+                editorState,
+                nextContentState,
+                'insert-characters'
+            );
+        } else {
+            const nextContentState = Modifier.replaceText(contentState, selection, text);
+            nextEditorState = EditorState.push(
+                editorState,
+                nextContentState,
+                'insert-characters'
+            );
+        }
+            hasDot = true  // todo 插入语句之后有标点就提示
+        updateEditorState =  nextEditorState
+        this.onChange(updateEditorState)
+    }
+
+    onAutocompleteChange = (autocompleteState) => {
+        console.log(autocompleteState)
+        this.setState({
+            autocompleteState
+        })
+    };
+
+    onInsert = (insertState) => {
+        if (!filteredArrayTemp) {
+            return null;
+        }else {
+            const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
+            requestStr && requestStr.length >= 60 && index >= 0 ?
+            // insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
+            insertState.text =  filteredArrayTemp[index]
+                :
+                insertState.text = ''
+            ;
+            // insertState.trigger =  requestStr.slice(requestStr.length,1)
+            return  this.addSuggestion(insertState);
+        }
+    };
 
     renderAutocomplete() {
         const {
@@ -237,15 +238,15 @@ class AutocompleteInput extends React.Component {
         return dataArray;
     }
 
-    changeNameValue(e){
+    changeNameValue = (e) => {
         filterType.name = e.target.value
     }
 
-    changeCateGoryValue(e){
+    changeCateGoryValue = (e) => {
         filterType.category = e.target.value
     }
 
-    changeexpenseValue(e){
+    changeexpenseValue = (e) => {
         filterType.expense = e.target.value
     }
 
@@ -322,35 +323,11 @@ class AutocompleteInput extends React.Component {
 
 }
 
-function filterPromptData  (data){
-    data = data.result
-    let str = []
-    for(let i =0; i < data.length; i++){
-        str[i] = ''
-        for(let j=0; j<data[i].length; j++){
-            const end = data[i][j].length
-            let temp = ''
-            if(data[i][j].indexOf('product_name') >= 0  && filterType.name){
-                const start = data[i][j].indexOf('product_name') - 12
-                temp = data[i][j].slice(0,start) + filterType.name + data[i][j].slice(12,end)
-            }
-            if(data[i][j].indexOf('category') >= 0  && filterType.category){
-                const start = data[i][j].indexOf('product_name') -8
-                temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(8,end)
-            }
-            if(data[i][j].indexOf('expense') >= 0  && filterType.expense){
-                const start = data[i][j].indexOf('product_name') -7
-                temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(7,end)
-            }
-            str[i] += temp ? temp : data[i][j]
-        }
-    }
-    return str
-}
+
 const mapStateToProps = (state) => {
 
     return {
-        promptData: state.promptData.entities.result ? filterPromptData(state.promptData.entities) : state.promptData.entities,
+        promptData: state.promptData.entities.result ? filterPromptData(state.promptData.entities, filterType) : state.promptData.entities,
     }
 }
 
