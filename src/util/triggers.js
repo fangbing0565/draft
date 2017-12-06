@@ -10,7 +10,7 @@ export const TAG_REG_EX = [/^#/];
 export const PERSON_REG_EX = [/^#。/,/^#!/,/^#！/,/^#？/,/^#?/,/^#,/,/^#./,/^#;/];
 function isHasElementOne(arr,value){
     for(var i = 0,vlen = arr.length; i < vlen; i++){
-        if(arr[i] == value){
+        if(arr[i] === value){
             return i;
         }
     }
@@ -18,9 +18,9 @@ function isHasElementOne(arr,value){
 }
 
 export const triggerByType = (type) => {
-  return type == TAG ? TAG_TRIGGER : PERSON_TRIGGER;
+  return type === TAG ? TAG_TRIGGER : PERSON_TRIGGER;
 };
 
 export const regExByType = (type, text) => {
-    return type == TAG ? TAG_REG_EX[isHasElementOne(TAG_TRIGGER,text)] : PERSON_REG_EX[isHasElementOne(PERSON_TRIGGER,text)];
+    return type === TAG ? TAG_REG_EX[isHasElementOne(TAG_TRIGGER,text)] : PERSON_REG_EX[isHasElementOne(PERSON_TRIGGER,text)];
 };

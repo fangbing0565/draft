@@ -4,15 +4,7 @@ export function promptData(state, action) {
     }
     switch (action.type) {
         case 'GET_PROMPT_SUCCESS':
-            const data = action.data.result
-            let str = []
-            for(let i =0; i < data.length; i++){
-                str[i] = ''
-                for(let j=0; j<data[i].length; j++){
-                    str[i] +=  data[i][j]
-                }
-            }
-            return {...state, entities: str}
+            return {...state, entities: action.data}
 
         case 'GET_PROMPT_ERROR':
             return {...state, error: action.data}

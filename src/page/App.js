@@ -7,15 +7,23 @@ import {normalizeIndex, filterArray} from '../util/utils';
 import { connect } from 'react-redux'
 import * as triggers from '../util/triggers';
 import * as data from '../data/data';
-import addSuggestion from '../componets/addsuggestion';
+// import addSuggestion from '../componets/addsuggestion';
 import 'whatwg-fetch'
-import { getPrompt } from '../actions/index'
+import { getPrompt, getPromptSuccess } from '../actions/index'
 import './App.css'
 let filteredArrayTemp;
-const {Entity, Modifier, Editor, EditorState, convertToRaw} = Draft;
+const {Entity, Modifier, Editor, EditorState, convertToRaw, RichUtils, CodeUtils} = Draft;
 
 let currentIndex = -1;
 let requestStr = '';
+let hasDot = false;
+let updateEditorState;
+let filterType ={
+    name: '',
+    category: '',
+    expense: ''
+}
+// let lastPostStr = '';
 const tools = [
     {id: 1, url:'./img/bold.svg'}, {id: 2, url:'./img/italic.svg'}, {id: 3, url:'./img/title.svg'},
     {id: 4, url:'./img/cite.svg'}, {id: 5, url:'./img/code.svg'}, {id: 6, url:'./img/unorderedlist.svg'},
@@ -36,13 +44,14 @@ class AutocompleteInput extends React.Component {
             currentType: '',
             content: {},
             selection: {},
-            promptData: []
         };
         this.mark = ['。', '!', '！', '?', '？', '.', ',', '，', ';'];
     }
 
-    onChange = (editorState) => {
+    onChange = (editorState, state) => {
+        hasDot = false
         if(this.state.editorState) {
+            editorState = editorState ? editorState : updateEditorState
             this.setState({editorState});
             const content = this.state.editorState.getCurrentContent();
             const selection = this.state.editorState.getSelection();
@@ -55,38 +64,51 @@ class AutocompleteInput extends React.Component {
                     const content = this.state.editorState.getCurrentContent()
                     const selection = this.state.editorState.getSelection()
                     console.log(selection, selection.getEndKey(), selection.getEndOffset(), convertToRaw(content))
-                    this.cursorToMark(convertToRaw(content), selection)
+                    state ? this.cursorToMark(convertToRaw(content), selection) : ''
                 }
             )
+        }
+    }
+
+    myKeyBindingFn(e){
+        if(e.keyCode === 17 ){
+            this.onChange(this.state.editorState, 1)
         }
     }
 
     cursorToMark = (data, selection) => {
         let cursor = {
             key: selection.getEndKey(),
-            offset: selection.getEndOffset()
+            offset: selection.getEndOffset(),
+            hasFocus: selection.getHasFocus()
         }
         for (let i = 0; i < data.blocks.length; i++) {
-            if (data.blocks[i].key === cursor.key && data.blocks[i].text.slice(cursor.offset - 1, cursor.offset) !== '' && this.mark.indexOf(data.blocks[i].text.slice(cursor.offset - 1, cursor.offset)) >= 0) {
+            if (cursor.hasFocus && data.blocks[i].key === cursor.key && data.blocks[i].text.slice(cursor.offset - 1, cursor.offset) !== '' && this.mark.indexOf(data.blocks[i].text.slice(cursor.offset - 1, cursor.offset)) >= 0) {
                 requestStr = this.getRequestStr(i, cursor.offset)
                 // todo  弹出提示选择自动填充下一句
                 // this.insertResponse()
                 let data = {'context': requestStr}
-                if(requestStr && requestStr.length >= 60) {
+                if(requestStr && requestStr.length >= 60 ) {
+                    hasDot = true
+                    // lastPostStr = requestStr
                     currentIndex =  this.mark.indexOf(this.getRequestStr(i, cursor.offset).slice(this.getRequestStr(i, cursor.offset).length - 1, this.getRequestStr(i, cursor.offset).length))
                     this.props.getPrompt(data)
                 }
             }
         }
+        if(!hasDot){
+            let data = {result:[]}
+            this.props.fetchPrompt(data)
+        }
     }
 
-    insertResponse = () => {
+    addSuggestion = (data) => {
         //    todo  取回数据 更新进对应位置
         const text = ''
         const {editorState} = this.state;
         const selection = editorState.getSelection();
         const contentState = editorState.getCurrentContent();
-        const txt = '机器写作部分。' + text;
+        let txt = data.text + text;
         let nextEditorState = EditorState.createEmpty();
         if (selection.isCollapsed()) {
             const nextContentState = Modifier.insertText(contentState, selection, txt);
@@ -103,11 +125,8 @@ class AutocompleteInput extends React.Component {
                 'insert-characters'
             );
         }
-        this.setState(
-            {
-                editorState: nextEditorState
-            }
-        )
+        updateEditorState =  nextEditorState
+        this.onChange(updateEditorState)
     }
 
     onAutocompleteChange = (autocompleteState) => {
@@ -122,13 +141,14 @@ class AutocompleteInput extends React.Component {
             return null;
         }else {
             const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
-            requestStr && requestStr.length >= 60 ?
-            insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
+            requestStr && requestStr.length >= 60 && index ?
+            // insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
+            insertState.text =  filteredArrayTemp[index]
                 :
                 insertState.text = ''
             ;
             // insertState.trigger =  requestStr.slice(requestStr.length,1)
-            return  addSuggestion(insertState);
+            return  this.addSuggestion(insertState);
         }
     };
 
@@ -181,18 +201,6 @@ class AutocompleteInput extends React.Component {
         }
     }
 
-    handleKeyCommand = (command, editorState) => {
-        // console.log(requestStr)
-        // Enter 键  发送数据
-        // this.insertResponse()
-        // const newState = RichUtils.handleKeyCommand(editorState, command);
-        // const newState = RichUtils.handleKeyCommand(editorState, command);
-        // if (newState) {
-        //     this.handleChange(newState);
-        //     return 'handled';
-        // }
-        // return 'not-handled';
-    }
 
     renderAutocomplete() {
         const {
@@ -214,20 +222,33 @@ class AutocompleteInput extends React.Component {
     getFilteredArray(type) {
         // todo 更新数据部分
         let dataArray = []
-        if(currentIndex === -1){
+        if(currentIndex === -1 || !hasDot){
             return []
         }
-        if(!this.props.promptData.entities.length){
+        if(!this.props.promptData.length){
             dataArray = type === triggers.PERSON ? data.persons : data.tags;
         }
         else{
-            dataArray = this.props.promptData.entities
+            dataArray = this.props.promptData
         }
         // const filteredArray = filterArray(dataArray, text.replace(triggers.regExByType(type, text), ''));
         // console.log(filteredArray)
 
         return dataArray;
     }
+
+    changeNameValue(e){
+        filterType.name = e.target.value
+    }
+
+    changeCateGoryValue(e){
+        filterType.category = e.target.value
+    }
+
+    changeexpenseValue(e){
+        filterType.expense = e.target.value
+    }
+
     render() {
         return ( < div style={
                 styles.root
@@ -238,19 +259,19 @@ class AutocompleteInput extends React.Component {
                             <span>
                                 产品名称
                             </span>
-                            <input type="text" name="" id=""/>
+                            <input type="text" className="search-input" autoComplete="off" onChange={this.changeNameValue} />
                         </li>
                         <li>
                             <span>
                                 产品种类
                             </span>
-                            <input type="text" name="" id=""/>
+                            <input type="text" className="search-input" autoComplete="off"  onChange={this.changeCateGoryValue} />
                         </li>
                         <li>
                             <span>
                                 加盟费用
                             </span>
-                            <input type="text" name="" id=""/>
+                            <input type="text" className="search-input" autoComplete="off" onChange={this.changeexpenseValue} />
                         </li>
                     </ul>
                 </div>
@@ -279,12 +300,11 @@ class AutocompleteInput extends React.Component {
                         )
                     }
                 </div>
-                < div style={
-                    styles.editor
-                }>
+                < div style={styles.editor}>
                     < AutocompleteEditor editorState={
                         this.state.editorState
                     }
+                                         myKeyBindingFn={(e) =>this.myKeyBindingFn(e)}
                                          onChange={
                                              this.onChange
                                          }
@@ -294,23 +314,50 @@ class AutocompleteInput extends React.Component {
                                          onInsert={
                                              this.onInsert
                                          }
-                                         handleKeyCommand={this.handleKeyCommand}
-                    /></div>
+                    />
+                </div>
             </div>
         );
     }
 
 }
 
+function filterPromptData  (data){
+    data = data.result
+    let str = []
+    for(let i =0; i < data.length; i++){
+        str[i] = ''
+        for(let j=0; j<data[i].length; j++){
+            const end = data[i][j].length
+            let temp = ''
+            if(data[i][j].indexOf('product_name') >= 0  && filterType.name){
+                const start = data[i][j].indexOf('product_name') - 12
+                temp = data[i][j].slice(0,start) + filterType.name + data[i][j].slice(12,end)
+            }
+            if(data[i][j].indexOf('category') >= 0  && filterType.category){
+                const start = data[i][j].indexOf('product_name') -8
+                temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(8,end)
+            }
+            if(data[i][j].indexOf('expense') >= 0  && filterType.expense){
+                const start = data[i][j].indexOf('product_name') -7
+                temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(7,end)
+            }
+            str[i] += temp ? temp : data[i][j]
+        }
+    }
+    return str
+}
 const mapStateToProps = (state) => {
+
     return {
-        promptData: state.promptData,
+        promptData: state.promptData.entities.result ? filterPromptData(state.promptData.entities) : state.promptData.entities,
     }
 }
 
 const mapDispatchToProps = (dispatch) => {
     return {
         getPrompt: (data) => dispatch(getPrompt(data)),
+        fetchPrompt: (data) => dispatch(getPromptSuccess(data)),
     }
 }
 

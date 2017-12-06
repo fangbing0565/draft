@@ -2,8 +2,7 @@ import React from 'react';
 import * as Draft from 'draft-js';
 import styles from '../styles/styles';
 import * as triggers from '../util/triggers';
-const {Editor, EditorState} = Draft;
-
+const {Editor, EditorState, RichUtils} = Draft;
 export class AutocompleteEditor extends Editor {
     constructor(props) {
         super(props);
@@ -80,7 +79,19 @@ export class AutocompleteEditor extends Editor {
         this.handleReturn = (e) => {
             return this.commitSelection(e);
         }
-
+        this.myKeyBindingFn = (e) => {
+            const { myKeyBindingFn } = this.props
+            myKeyBindingFn(e)
+            // if (e.keyCode === 90 /* `S` key */ ) {
+            //     // return 'myeditor-save';
+            //     // this.onChange(e)
+            //     const {
+            //         onChange
+            //     } = this.props;
+            //     onChange(e);
+            // }
+            // return getDefaultKeyBinding(e);
+        }
     }
 
     commitSelection(e) {
@@ -247,11 +258,12 @@ export class AutocompleteEditor extends Editor {
             onEscape,
             onUpArrow,
             onDownArrow,
+            keyBindingFn,
             onAutocompleteChange,
         } = this.props;
 
         return (
-            < Editor customStyleMap={styles}
+            < Editor customStyleMap={styles} keyBindingFn={this.myKeyBindingFn}
                      editorState={editorState}
                      handleReturn={this.handleReturn}
                      onChange={this.onChange}
