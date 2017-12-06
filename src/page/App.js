@@ -10,12 +10,19 @@ import * as data from '../data/data';
 import addSuggestion from '../componets/addsuggestion';
 import 'whatwg-fetch'
 import { getPrompt } from '../actions/index'
-
+import './App.css'
 let filteredArrayTemp;
 const {Entity, Modifier, Editor, EditorState, convertToRaw} = Draft;
 
 let currentIndex = -1;
 let requestStr = '';
+const tools = [
+    {id: 1, url:'./img/bold.svg'}, {id: 2, url:'./img/italic.svg'}, {id: 3, url:'./img/title.svg'},
+    {id: 4, url:'./img/cite.svg'}, {id: 5, url:'./img/code.svg'}, {id: 6, url:'./img/unorderedlist.svg'},
+    {id: 7, url:'./img/orderedlist.svg'}, {id: 8, url:'./img/link.svg'}, {id: 9, url:'./img/pic.svg'},
+    {id: 10, url:'./img/video.svg'}, {id: 11, url:'./img/formulae.svg'}, {id: 12, url:'./img/line.svg'},
+    {id: 13, url:'./img/removeformat.svg'},
+]
 
 class AutocompleteInput extends React.Component {
 
@@ -224,15 +231,50 @@ class AutocompleteInput extends React.Component {
     render() {
         return ( < div style={
                 styles.root
-            }> {
+            }>
+                <div className="content-box">
+                    <ul>
+                        <li>
+                            <span>
+                                产品名称
+                            </span>
+                            <input type="text" name="" id=""/>
+                        </li>
+                        <li>
+                            <span>
+                                产品种类
+                            </span>
+                            <input type="text" name="" id=""/>
+                        </li>
+                        <li>
+                            <span>
+                                加盟费用
+                            </span>
+                            <input type="text" name="" id=""/>
+                        </li>
+                    </ul>
+                </div>
+                {
                 this.renderAutocomplete()
             }
                 <div className="editorName">智能编辑器</div>
                 <div className="editorTools">
                     {
-                        [].map((item, index) =>
-                            <div className="">
-                                <i style={{background:item.url}}/>
+                        tools.map((item, index) =>
+                            <div className="editorTools-item" key={index}>
+                                {item.url === './img/bold.svg' ?  <img className="item-icon" src={require('./img/bold.svg')} alt=""/> : ''}
+                                {item.url === './img/italic.svg' ?  <img className="item-icon" src={require('./img/italic.svg')} alt=""/> : ''}
+                                {item.url === './img/title.svg' ?  <img className="item-icon" src={require('./img/title.svg')} alt=""/> : ''}
+                                {item.url === './img/cite.svg' ?  <img className="item-icon" src={require('./img/cite.svg')} alt=""/> : ''}
+                                {item.url === './img/code.svg' ?  <img className="item-icon" src={require('./img/code.svg')} alt=""/> : ''}
+                                {item.url === './img/unorderedlist.svg' ?  <img className="item-icon" src={require('./img/unorderedlist.svg')} alt=""/> : ''}
+                                {item.url === './img/orderedlist.svg' ?  <img className="item-icon" src={require('./img/orderedlist.svg')} alt=""/> : ''}
+                                {item.url === './img/link.svg' ?  <img className="item-icon" src={require('./img/link.svg')} alt=""/> : ''}
+                                {item.url === './img/pic.svg' ?  <img className="item-icon" src={require('./img/pic.svg')} alt=""/> : ''}
+                                {item.url === './img/video.svg' ?  <img className="item-icon" src={require('./img/video.svg')} alt=""/> : ''}
+                                {item.url === './img/formulae.svg' ?  <img className="item-icon" src={require('./img/formulae.svg')} alt=""/> : ''}
+                                {item.url === './img/line.svg' ?  <img className="item-icon" src={require('./img/line.svg')} alt=""/> : ''}
+                                {item.url === './img/removeformat.svg' ?  <img className="item-icon" src={require('./img/removeformat.svg')} alt=""/> : ''}
                             </div>
                         )
                     }
