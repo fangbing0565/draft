@@ -63,7 +63,7 @@ class AutocompleteInput extends React.Component {
                     const content = this.state.editorState.getCurrentContent()
                     const selection = this.state.editorState.getSelection()
                     console.log(selection, selection.getEndKey(), selection.getEndOffset(), convertToRaw(content))
-                    state ? this.cursorToMark(convertToRaw(content), selection) : ''
+                      this.cursorToMark(convertToRaw(content), selection,state)
                 }
             )
         }
@@ -75,28 +75,30 @@ class AutocompleteInput extends React.Component {
         }
     }
 
-    cursorToMark = (data, selection) => {
-        hasDot = false
+    cursorToMark = (data, selection, state) => {
+        let judgeHasDot = false   // true 进入hasDot判断且有 Dot
         let cursor = {
             key: selection.getEndKey(),
             offset: selection.getEndOffset(),
             hasFocus: selection.getHasFocus()
         }
         for (let i = 0; i < data.blocks.length; i++) {
-            if (cursor.hasFocus && data.blocks[i].key === cursor.key && data.blocks[i].text.slice(cursor.offset - 1, cursor.offset) !== '' && this.mark.indexOf(data.blocks[i].text.slice(cursor.offset - 1, cursor.offset)) >= 0) {
+            if (cursor.hasFocus && data.blocks[i].key === cursor.key && (data.blocks[i].text.slice(cursor.offset - 1, cursor.offset) === '\n' || this.mark.indexOf(data.blocks[i].text.slice(cursor.offset - 1, cursor.offset)) >= 0)) {
                 requestStr = this.getRequestStr(i, cursor.offset)
                 // todo  弹出提示选择自动填充下一句
                 let data = {'context': requestStr}
                 if(requestStr && requestStr.length >= 60 ) {
+                    judgeHasDot = true
                     hasDot = true
                     currentIndex =  this.mark.indexOf(this.getRequestStr(i, cursor.offset).slice(this.getRequestStr(i, cursor.offset).length - 1, this.getRequestStr(i, cursor.offset).length))
-                     this.props.getPrompt(data)
+                    state ? this.props.getPrompt(data) : ''
                 }
             }
         }
-        if(!hasDot){
-            let data = {result:[]}
-            this.props.fetchPrompt(data)
+        if(!judgeHasDot){
+            hasDot = false
+            let newData = {result:[]}
+            this.props.fetchPrompt(newData)
         }
     }
 
@@ -175,7 +177,9 @@ class AutocompleteInput extends React.Component {
                 'insert-characters'
             );
         }
-            hasDot = true  // todo 插入语句之后有标点就提示
+        /*----- todo 参数归零-----*/
+        let newData = {result:[]}
+        this.props.fetchPrompt(newData)
         updateEditorState =  nextEditorState
         this.onChange(updateEditorState)
     }
@@ -192,7 +196,7 @@ class AutocompleteInput extends React.Component {
             return null;
         }else {
             const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
-            requestStr && requestStr.length >= 60 && index >= 0 ?
+            requestStr && requestStr.length >= 60 && index >= 0 && filteredArrayTemp[index] !== 'ctrl键提示下一句' ?
             // insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
             insertState.text =  filteredArrayTemp[index]
                 :
@@ -254,7 +258,11 @@ class AutocompleteInput extends React.Component {
         return ( < div style={
                 styles.root
             }>
+                <div className="editorName">智能编辑器</div>
                 <div className="content-box">
+                    <div className="content-title">
+                        用户输入
+                    </div>
                     <ul>
                         <li>
                             <span>
@@ -279,7 +287,7 @@ class AutocompleteInput extends React.Component {
                 {
                 this.renderAutocomplete()
             }
-                <div className="editorName">智能编辑器</div>
+
                 <div className="editorTools">
                     {
                         tools.map((item, index) =>

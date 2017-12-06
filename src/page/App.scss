@@ -1,3 +1,7 @@
+.editorName{
+  font-size: 24px;
+  text-align: center;
+}
 .editorTools {
   display: flex;
   justify-content: flex-start;
@@ -21,8 +25,40 @@
 }
 
 .content-box {
-  position: absolute;
-  left: 0;
-  top: 120px;
-  max-width: 300px;
+  max-width: 100%;
+
+  .content-title{
+    font-size: 20px;
+    text-align: left;
+  }
+  ul{
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    li{
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      span{
+        padding-right: 12px;
+
+      }
+    }
+  }
+}
+@media screen and (min-width: 1200px){
+  .content-box{
+    max-width: 15%;
+    position: absolute;
+    left: 0;
+    top: 150px;
+    .content-title {
+      text-align: center;
+    }
+    li{
+      padding: 10px 0;
+
+    }
+    }
 }

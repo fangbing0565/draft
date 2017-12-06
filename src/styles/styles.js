@@ -1,11 +1,11 @@
 const styles = {
   root: {
-    width: 600,
+    width: '65%',
       height:'100vh',
     padding: 40,
     fontFamily: 'HelveticaNeue-Light',
     margin: 'auto',
-    fontSize: '15pt'
+    fontSize: '15px'
   },
   editor: {
     borderRadius: 4,

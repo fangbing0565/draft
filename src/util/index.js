@@ -140,7 +140,15 @@ function filterPromptData  (data, filterType){
                 const start = data[i][j].indexOf('product_name') -7
                 temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(7,end)
             }
+            if(data[i][j] === 'paragraph'){
+                temp = '\n'
+            }
             str[i] += temp ? temp : data[i][j]
+        }
+    }
+    for(let i = 0; i <= str.length; i ++){
+        if(!str[i]){
+            str.splice(i,1)
         }
     }
     return str
