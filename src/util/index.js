@@ -18,7 +18,7 @@ async function ajax(url, payload, method) {
     }
 
     let init = {}
-    const auth = localStorage.getItem('token') ? ('JWT ' + localStorage.getItem('token')) : ''
+    // const auth = localStorage.getItem('token') ? ('JWT ' + localStorage.getItem('token')) : ''
 
     if (method === 'GET' || method === 'get') {
         url = url + json2Form(payload)
@@ -27,18 +27,18 @@ async function ajax(url, payload, method) {
             method: 'GET',
             credentials: 'include',
             headers: {
-                'Authorization': auth
             },
         }
     } else if (method === 'POST' || method === 'post') {
         init = {
             method: 'POST',
+            mode: 'cors',
             credentials: 'include',
             headers: {
-                'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'Authorization': auth
+                'Content-type': 'application/json; charset=UTF-8',
+                'cache-control': 'no-cache',
             },
-            body: json2Form(payload)
+            body: JSON.stringify(payload)
         }
     } else {
         return
@@ -72,7 +72,7 @@ async function ajaxJson(url, payload, method) {
     }
 
     let init = {}
-    const auth = localStorage.getItem('token') ? ('JWT ' + localStorage.getItem('token')) : ''
+    // const auth = localStorage.getItem('token') ? ('JWT ' + localStorage.getItem('token')) : ''
 
     if (method === 'GET' || method === 'get') {
         url = url + json2Form(payload)
@@ -81,7 +81,7 @@ async function ajaxJson(url, payload, method) {
             method: 'GET',
             credentials: 'include',
             headers: {
-                'Authorization': auth
+                // 'Authorization': auth
             },
         }
     } else if (method === 'POST' || method === 'post') {
@@ -90,7 +90,7 @@ async function ajaxJson(url, payload, method) {
             credentials: 'include',
             headers: {
                 'Content-type': 'application/json; charset=UTF-8',
-                'Authorization': auth
+                // 'Authorization': auth
             },
             body: JSON.stringify(payload)
         }

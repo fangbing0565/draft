@@ -1,15 +1,15 @@
 import React from 'react';
 import * as Draft from 'draft-js';
-import {AutocompleteEditor} from './componets/autocomplete';
-import SuggestionList from './componets/suggestions';
-import styles from './styles/styles'
-import {normalizeIndex, filterArray} from './util/utils';
+import {AutocompleteEditor} from '../componets/autocomplete';
+import SuggestionList from '../componets/suggestions';
+import styles from '../styles/styles'
+import {normalizeIndex, filterArray} from '../util/utils';
 import { connect } from 'react-redux'
-import * as triggers from './util/triggers';
-import * as data from './data/data';
-import addSuggestion from './componets/addsuggestion';
+import * as triggers from '../util/triggers';
+import * as data from '../data/data';
+import addSuggestion from '../componets/addsuggestion';
 import 'whatwg-fetch'
-import { getPrompt } from './actions'
+import { getPrompt } from '../actions/index'
 
 let filteredArrayTemp;
 const {Entity, Modifier, Editor, EditorState, convertToRaw} = Draft;
@@ -29,7 +29,7 @@ class AutocompleteInput extends React.Component {
             currentType: '',
             content: {},
             selection: {},
-            prompt: []
+            promptData: []
         };
         this.mark = ['。', '!', '！', '?', '？', '.', ',', '，', ';'];
     }
@@ -210,33 +210,33 @@ class AutocompleteInput extends React.Component {
         if(currentIndex === -1){
             return []
         }
-        if(this.state.prompt.length === 0 ){
+        if(!this.props.promptData.entities.length){
             dataArray = type === triggers.PERSON ? data.persons : data.tags;
         }
         else{
-            dataArray = this.state.prompt
+            dataArray = this.props.promptData.entities
         }
         // const filteredArray = filterArray(dataArray, text.replace(triggers.regExByType(type, text), ''));
         // console.log(filteredArray)
 
         return dataArray;
     }
-    componentDidUpdate() {
-        if (this.props.prompt && this.props.prompt.entities) {
-            this.setState(
-                {
-                    prompt: this.props.prompt.entities
-                }
-            )
-        }
-    }
-
     render() {
         return ( < div style={
                 styles.root
             }> {
                 this.renderAutocomplete()
             }
+                <div className="editorName">智能编辑器</div>
+                <div className="editorTools">
+                    {
+                        [].map((item, index) =>
+                            <div className="">
+                                <i style={{background:item.url}}/>
+                            </div>
+                        )
+                    }
+                </div>
                 < div style={
                     styles.editor
                 }>
@@ -262,7 +262,7 @@ class AutocompleteInput extends React.Component {
 
 const mapStateToProps = (state) => {
     return {
-        prompt: state.prompt,
+        promptData: state.promptData,
     }
 }
 

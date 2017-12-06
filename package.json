@@ -1,9 +1,10 @@
 {
-  "name": "dmeo-draft",
+  "name": "draft",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
     "draft-js": "^0.7.0",
+    "egg-cors": "^2.0.0",
     "history": "^4.7.2",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
@@ -27,5 +28,6 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
-  }
+  },
+  "proxy": "http://54.223.181.183:3000"
 }

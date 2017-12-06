@@ -1,14 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+
 import { Router, Switch, Route } from 'react-router-dom'
 import { Provider, connect } from 'react-redux'
 import history from './history'
 import Helmet from 'react-helmet'
 import './index.css';
-import AutocompleteInput from './App';
 import registerServiceWorker from './registerServiceWorker';
 import configureStore from './store'
+import MainLayout from './routes/MainLayout'
+
 const store = configureStore({})
+
 
 const mapStateToProps = (state) => {
     return {
@@ -20,14 +23,14 @@ class App extends React.Component {
         return (
             <div>
                 <Helmet
-                    title="投研通"
+                    title="智能编辑器"
                     meta={[
-                        { name: 'keywords', content: '投研通' },
-                        { name: 'description', content: '投研通' }
+                        { name: 'keywords', content: '智能编辑器' },
+                        { name: 'description', content: '智能编辑器' }
                     ]}
                 />
                 <Switch>
-                    <Route path="/" component={AutocompleteInput} />
+                    <Route path="/" component={MainLayout} />
                 </Switch>
             </div>
         )

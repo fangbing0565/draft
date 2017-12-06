@@ -11,7 +11,7 @@ const addSuggestion = ({editorState, start, end, trigger, text}) => {
   let insertingContent = Modifier.replaceText(
     editorState.getCurrentContent(),
     mentionTextSelection,
-    text, ['link', ''],
+    text, ['', ''],  // todo link  BOLD
     entityKey
   );
 
