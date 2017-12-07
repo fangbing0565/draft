@@ -196,12 +196,14 @@ class AutocompleteInput extends React.Component {
             return null;
         }else {
             const index = normalizeIndex(insertState.selectedIndex, filteredArrayTemp.length);
-            requestStr && requestStr.length >= 60 && index >= 0 && filteredArrayTemp[index] !== 'ctrl键提示下一句' ?
+            requestStr && requestStr.length >= 60 && index >= 0 ?
             // insertState.text = insertState.trigger[currentIndex] + filteredArrayTemp[index]
             insertState.text =  filteredArrayTemp[index]
                 :
-                insertState.text = ''
-            ;
+                insertState.text = '';
+            if(filteredArrayTemp[index] === 'ctrl键提示下一句') {
+                insertState.text = '\n'
+            }
             // insertState.trigger =  requestStr.slice(requestStr.length,1)
             return  this.addSuggestion(insertState);
         }
@@ -227,7 +229,8 @@ class AutocompleteInput extends React.Component {
     getFilteredArray(type) {
         // todo 更新数据部分
         let dataArray = []
-        if(currentIndex === -1 || !hasDot){
+        // if(currentIndex === -1 || !hasDot){
+        if(!hasDot){
             return []
         }
         if(!this.props.promptData.length){
@@ -258,7 +261,7 @@ class AutocompleteInput extends React.Component {
         return ( < div style={
                 styles.root
             }>
-                <div className="editorName">智能编辑器</div>
+                <div className="editorName">EditorAI智能编辑器</div>
                 <div className="content-box">
                     <div className="content-title">
                         用户输入

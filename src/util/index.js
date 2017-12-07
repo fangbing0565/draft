@@ -141,13 +141,13 @@ function filterPromptData  (data, filterType){
                 temp = data[i][j].slice(0,start) + filterType.category + data[i][j].slice(7,end)
             }
             if(data[i][j] === 'paragraph'){
-                temp = '\n'
+                data[i][j] = '\n'
             }
             str[i] += temp ? temp : data[i][j]
         }
     }
-    for(let i = 0; i <= str.length; i ++){
-        if(!str[i]){
+    for(let i = 0; i < str.length; i ++){
+        if(!str[i] || str[i] === '\n'){   // todo  改行只有换行符号，就去除
             str.splice(i,1)
         }
     }
