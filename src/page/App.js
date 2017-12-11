@@ -11,6 +11,8 @@ import * as data from '../data/data';
 // import addSuggestion from '../componets/addsuggestion';
 import 'whatwg-fetch'
 import { getPrompt, getPromptSuccess } from '../actions/index'
+import BlockStyleControls from '../componets/blockStyleControls'
+import InlineStyleControls from '../componets/inlineStyleControls'
 import './App.css'
 let filteredArrayTemp;
 const {Entity, Modifier, Editor, EditorState, convertToRaw, RichUtils, CodeUtils} = Draft;
@@ -46,6 +48,8 @@ class AutocompleteInput extends React.Component {
             selection: {},
         };
         this.mark = ['。', '!', '！', '?', '？', '.', ',', '，', ';'];
+        this.toggleBlockType = this.toggleBlockType.bind(this)
+        this.toggleInlineStyle = this.toggleInlineStyle.bind(this)
     }
 
     onChange = (editorState, state) => {
@@ -257,7 +261,26 @@ class AutocompleteInput extends React.Component {
         filterType.expense = e.target.value
     }
 
+    toggleBlockType = (blockType) => {
+        this.onChange(
+            RichUtils.toggleBlockType(
+                this.state.editorState,
+                blockType
+            )
+        );
+    }
+
+    toggleInlineStyle = (inlineStyle) => {
+        this.onChange(
+            RichUtils.toggleInlineStyle(
+                this.state.editorState,
+                inlineStyle
+            )
+        );
+    }
+
     render() {
+        const {editorState} = this.state
         return ( < div style={
                 styles.root
             }>
@@ -291,6 +314,16 @@ class AutocompleteInput extends React.Component {
                 this.renderAutocomplete()
             }
 
+                <div className="editorTools">
+                    <BlockStyleControls
+                        editorState={editorState}
+                        onToggle={this.toggleBlockType}
+                    />
+                    <InlineStyleControls
+                        editorState={editorState}
+                        onToggle={this.toggleInlineStyle}
+                    />
+                </div>
                 <div className="editorTools">
                     {
                         tools.map((item, index) =>
