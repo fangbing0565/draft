@@ -3,6 +3,7 @@ const styles = {
     width: '65%',
       height:'100vh',
     padding: 40,
+      position: 'relative',
     fontFamily: 'HelveticaNeue-Light',
     margin: 'auto',
     fontSize: '15px'
