@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "antd": "^3.0.1",
     "draft-js": "^0.7.0",
     "egg-cors": "^2.0.0",
     "history": "^4.7.2",

@@ -10,6 +10,8 @@ import * as triggers from '../util/triggers';
 import * as data from '../data/data';
 // import addSuggestion from '../componets/addsuggestion';
 import 'whatwg-fetch'
+import { Modal } from 'antd'
+import 'antd/dist/antd.css';
 import {getPrompt, getPromptSuccess} from '../actions/index'
 import BlockStyleControls from '../componets/blockStyleControls'
 import InlineStyleControls from '../componets/inlineStyleControls'
@@ -29,11 +31,27 @@ let filterType = {
     expense: ''
 }
 const tools = [
-    {id: 1, url: './img/bold.svg',name:'粗体'}, {id: 2, url: './img/italic.svg',name:'斜体'}, {id: 3, url: './img/title.svg',name:'标题'},
-    {id: 4, url: './img/cite.svg',name:'引用块'}, {id: 5, url: './img/code.svg',name:'代码块'}, {id: 6, url: './img/unorderedlist.svg',name:'无序列表'},
-    {id: 7, url: './img/orderedlist.svg',name:'有序列表'}, {id: 8, url: './img/link.svg',name:'插入链接'}, {id: 9, url: './img/pic.svg',name:'上传图片'},
-    {id: 10, url: './img/video.svg',name:'上传视频'}, {id: 11, url: './img/formulae.svg',name:'插入公式'}, {id: 12, url: './img/line.svg',name:'插入分割线'},
-    {id: 13, url: './img/removeformat.svg',name:'清除格式'},
+    {id: 1, url: './img/bold.svg', name: '粗体'}, {id: 2, url: './img/italic.svg', name: '斜体'}, {
+        id: 3,
+        url: './img/title.svg',
+        name: '标题'
+    },
+    {id: 4, url: './img/cite.svg', name: '引用块'}, {id: 5, url: './img/code.svg', name: '代码块'}, {
+        id: 6,
+        url: './img/unorderedlist.svg',
+        name: '无序列表'
+    },
+    {id: 7, url: './img/orderedlist.svg', name: '有序列表'}, {id: 8, url: './img/link.svg', name: '插入链接'}, {
+        id: 9,
+        url: './img/pic.svg',
+        name: '上传图片'
+    },
+    {id: 10, url: './img/video.svg', name: '上传视频'}, {id: 11, url: './img/formulae.svg', name: '插入公式'}, {
+        id: 12,
+        url: './img/line.svg',
+        name: '插入分割线'
+    },
+    {id: 13, url: './img/removeformat.svg', name: '清除格式'},
 ]
 
 class AutocompleteInput extends React.Component {
@@ -48,6 +66,8 @@ class AutocompleteInput extends React.Component {
             currentType: '',
             content: {},
             selection: {},
+            linkUrl: '',
+            linkVisible: false,
         };
         this.mark = ['。', '!', '！', '?', '？', '.', ',', '，', ';'];
         this.toggleBlockType = this.toggleBlockType.bind(this)
@@ -66,6 +86,7 @@ class AutocompleteInput extends React.Component {
                     selection: selection,
                 },
                 () => {
+                    console.log(this.state.content)
                     this.cursorToMark(this.state.content, this.state.selection, state)
                 }
             )
@@ -277,13 +298,10 @@ class AutocompleteInput extends React.Component {
             )
         );
     }
-    toggleLinkStyle = (utilStyle) => {
-        this.onChange(
-            RichUtils.toggleLink(
-                this.state.editorState,
-                utilStyle
-            )
-        );
+    toggleLinkStyle = (e) => {
+        this.setState({
+            linkVisible:true
+        })
     }
 
     saveWrite = () => {
@@ -295,8 +313,44 @@ class AutocompleteInput extends React.Component {
         console.log(str)
     }
 
+    changeLinkValue = (e) => {
+        this.setState({
+            linkUrl: e.target.value
+        })
+    }
+    submitLink = () => {
+        this.setState({
+            linkVisible:false
+        })
+        const {editorState, linkUrl,content} = this.state;
+        const key = Entity.create(
+            'LINK',
+            'MUTABLE',
+            {url: linkUrl}
+        );
+        const contentStateWithLink = RichUtils.toggleLink(
+            editorState,
+            editorState.getSelection(),
+            key
+        );
+        this.onChange(
+                contentStateWithLink
+        );
+    }
+    cancelLink = () => {
+        this.setState({
+            linkVisible:false
+        })
+    }
+
+    // 键盘enter事件 保存url
+    linkInputKeyDown = (e) => {
+        if (e.which === 13) {
+            this.submitLink();
+        }
+    }
     render() {
-        const {editorState} = this.state
+        const {editorState,linkVisible} = this.state
         return ( < div style={
                 styles.root
             }>
@@ -347,6 +401,12 @@ class AutocompleteInput extends React.Component {
                         onToggle={this.toggleLinkStyle}
                     />
                 </div>
+                <Modal title={'输入链接'} visible={linkVisible} onOk={() => this.submitLink()}
+                       onCancel={() => this.cancelLink()}>
+                    <div>
+                        <input type="text"  onKeyDown={this.linkInputKeyDown} onChange={this.changeLinkValue}/>
+                    </div>
+                </Modal>
                 < div style={styles.editor}>
                     < AutocompleteEditor editorState={
                         this.state.editorState
